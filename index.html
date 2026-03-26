@@ -779,7 +779,7 @@ h1, h2, h3 { font-family: 'Bricolage Grotesque', sans-serif; }
       </div>
 
       <button class="btn-primary" onclick="envoyerDevis()" style="margin-bottom:0.5rem">Envoyer au client par mail</button>
-      <button class="btn-primary" onclick="afficherPage('page-dashboard')" style="background:var(--color-background-secondary);color:var(--color-text-primary);border:0.5px solid var(--color-border-secondary)">Sauvegarder brouillon</button>
+      <button class="btn-primary" onclick="sauvegarderBrouillon()" style="background:var(--color-background-secondary);color:var(--color-text-primary);border:0.5px solid var(--color-border-secondary)">Sauvegarder brouillon</button>
     </div>
 
     <!-- PAGE CLIENTS -->
@@ -1748,6 +1748,84 @@ function rechercherClient(q) {
     item.style.display = name.includes(q.toLowerCase()) ? '' : 'none';
   });
 }
+
+// ===== SAUVEGARDE SUPABASE =====
+async function sauvegarderDevisSupabase(statut) {
+  try {
+    const lignes = [];
+    document.querySelectorAll('#lignes-container tr').forEach(row => {
+      const inputs = row.querySelectorAll('input');
+      if (inputs.length >= 2) {
+        lignes.push({
+          description: inputs[0] ? inputs[0].value : '',
+          quantite: parseFloat(inputs[1] ? inputs[1].value : 0) || 0,
+          prix_unitaire: parseFloat(inputs[2] ? inputs[2].value : 0) || 0
+        });
+      }
+    });
+    const devisData = {
+      statut: statut,
+      numero: (document.getElementById('devis-numero-display') || {}).textContent || '',
+      client_nom: (document.getElementById('devis-client') || {}).value || '',
+      client_tel: (document.getElementById('devis-tel') || {}).value || '',
+      client_email: (document.getElementById('devis-email-client') || {}).value || '',
+      client_adresse: (document.getElementById('devis-adresse') || {}).value || '',
+      description: (document.getElementById('devis-desc') || {}).value || '',
+      validite: (document.getElementById('devis-validite') || {}).value || '',
+      tva_pct: parseFloat((document.getElementById('devis-tva') || {}).value) || 0,
+      total_ht: parseFloat((document.getElementById('total-ht') || {}).textContent) || 0,
+      total_tva: parseFloat((document.getElementById('total-tva') || {}).textContent) || 0,
+      total_ttc: parseFloat((document.getElementById('total-ttc') || {}).textContent) || 0,
+      acompte_pct: parseFloat((document.getElementById('acompte-pct') || {}).textContent) || 0,
+      montant_acompte: parseFloat((document.getElementById('total-acompte') || {}).textContent) || 0,
+      solde_restant: parseFloat((document.getElementById('total-solde') || {}).textContent) || 0,
+      conditions: (document.getElementById('devis-conditions') || {}).value || '',
+      paiement: (document.getElementById('devis-paiement') || {}).value || '',
+      delai: (document.getElementById('devis-delai') || {}).value || '',
+      lignes: lignes,
+      cree_le: new Date().toISOString()
+    };
+    const response = await fetch(SUPABASE_URL + '/rest/v1/devis', {
+      method: 'POST',
+      headers: {
+        'apikey': SUPABASE_KEY,
+        'Authorization': 'Bearer ' + SUPABASE_KEY,
+        'Content-Type': 'application/json',
+        'Prefer': 'return=representation'
+      },
+      body: JSON.stringify(devisData)
+    });
+    if (!response.ok) {
+      const err = await response.json().catch(function() { return {}; });
+      console.error('Erreur Supabase:', err);
+      alert('Erreur sauvegarde : ' + (err.message || response.status));
+      return false;
+    }
+    console.log('Devis sauvegarde - statut: ' + statut);
+    return true;
+  } catch (e) {
+    console.error('Erreur sauvegardeSupabase:', e);
+    alert('Erreur de connexion a la base de donnees.');
+    return false;
+  }
+}
+
+async function sauvegarderBrouillon() {
+  var ok = await sauvegarderDevisSupabase('brouillon');
+  if (ok) {
+    alert('Brouillon sauvegarde avec succes !');
+    afficherPage('page-dashboard');
+  }
+}
+
+(function() {
+  var _origEnvoyer = window.envoyerDevis;
+  window.envoyerDevis = async function() {
+    await sauvegarderDevisSupabase('envoye');
+    if (_origEnvoyer) return _origEnvoyer.apply(this, arguments);
+  };
+})();
+
 </script>
 
 <div id="btn-install" style="display:none;position:fixed;bottom:72px;left:1rem;right:1rem;background:#2d6a4f;color:white;padding:14px 16px;border-radius:12px;align-items:center;justify-content:space-between;z-index:200;font-family:'DM Sans',sans-serif;font-size:14px;">
