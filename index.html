@@ -1766,6 +1766,7 @@ async function sauvegarderDevisSupabase(statut) {
     const devisData = {
       statut: statut,
       artisan_id: (JSON.parse(localStorage.getItem('artidevis_user') || '{}').id) || null,
+      titre: (document.getElementById('devis-desc') || {}).value || document.getElementById('devis-numero-display')?.textContent?.trim() || 'Devis',
       numero: (document.getElementById('devis-numero-display') || {}).textContent || '',
       client_nom: (document.getElementById('devis-client') || {}).value || '',
       client_tel: (document.getElementById('devis-tel') || {}).value || '',
