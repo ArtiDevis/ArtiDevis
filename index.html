@@ -1552,29 +1552,43 @@ function ajouterFraisKm() {
 }
 
 let iaTimeout = null;
-function analyserIA() {
+async function analyserIA() {
+  const desc = document.getElementById('devis-desc')?.value || '';
+  const adresse = document.getElementById('devis-adresse')?.value || '';
+  if (desc.length < 15) return;
+
   clearTimeout(iaTimeout);
-  const desc = document.getElementById('devis-desc').value.toLowerCase();
-  if (desc.length < 5) return;
-  iaTimeout = setTimeout(() => {
-    const card = document.getElementById('ia-suggestion-devis');
-    const text = document.getElementById('ia-suggestion-text');
-    const suggestions = {
-      'chaudière': 'Pour un remplacement de chaudière à ' + (artisanConnecte?.ville || 'votre zone') + ', le marché local est entre 1 600 € et 2 200 € TTC. Vérifiez votre tarif main d\'œuvre.',
-      'salle de bain': 'Une rénovation complète de salle de bain se facture entre 3 000 € et 8 000 € selon la surface. N\'oubliez pas les frais d\'évacuation.',
-      'fuite': 'Une intervention fuite urgente se facture entre 150 € et 400 € selon la complexité. Pensez au forfait déplacement.',
-      'peinture': 'Le tarif marché pour la peinture intérieure est de 15 à 35 €/m² fournitures comprises dans votre région.',
-      'électr': 'Pour une mise aux normes électrique, comptez entre 1 500 € et 4 000 € selon la surface du logement.'
-    };
-    let suggestion = null;
-    for (const [key, val] of Object.entries(suggestions)) {
-      if (desc.includes(key)) { suggestion = val; break; }
+  iaTimeout = setTimeout(async () => {
+    const profil = JSON.parse(localStorage.getItem('artidevis_profil') || '{}');
+    const ville = profil.ville || adresse || 'France';
+    const metier = profil.metier || '';
+    try {
+      const res = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': 'VOTRE_CLE_CLAUDE',
+          'anthropic-version': '2023-06-01'
+        },
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-20250514',
+          max_tokens: 200,
+          messages: [{
+            role: 'user',
+            content: `Tu es un expert en tarification BTP en France. \nUn artisan ${metier} \u00e0 ${ville} doit chiffrer ce chantier : "${desc}".\nDonne une fourchette de prix r\u00e9aliste en TTC pour ce type de travaux dans cette r\u00e9gion.\nR\u00e9ponds en 2 lignes max, format: "Fourchette estim\u00e9e : X\u20ac - Y\u20ac TTC. [Conseil court]"`
+          }]
+        })
+      });
+      const data = await res.json();
+      const suggestion = data.content?.[0]?.text || '';
+      if (suggestion) {
+        document.getElementById('ia-suggestion-text').textContent = suggestion;
+        document.getElementById('ia-suggestion-devis').style.display = 'block';
+      }
+    } catch(e) {
+      console.log('IA non disponible:', e);
     }
-    if (suggestion) {
-      text.textContent = suggestion;
-      card.style.display = 'block';
-    }
-  }, 800);
+  }, 1500);
 }
 
 async function envoyerDevis() {
