@@ -1563,24 +1563,13 @@ async function analyserIA() {
     const ville = profil.ville || adresse || 'France';
     const metier = profil.metier || '';
     try {
-      const res = await fetch('https://api.anthropic.com/v1/messages', {
+      const res = await fetch('/.netlify/functions/suggest-price', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-api-key': 'VOTRE_CLE_CLAUDE',
-          'anthropic-version': '2023-06-01'
-        },
-        body: JSON.stringify({
-          model: 'claude-sonnet-4-20250514',
-          max_tokens: 200,
-          messages: [{
-            role: 'user',
-            content: `Tu es un expert en tarification BTP en France. \nUn artisan ${metier} \u00e0 ${ville} doit chiffrer ce chantier : "${desc}".\nDonne une fourchette de prix r\u00e9aliste en TTC pour ce type de travaux dans cette r\u00e9gion.\nR\u00e9ponds en 2 lignes max, format: "Fourchette estim\u00e9e : X\u20ac - Y\u20ac TTC. [Conseil court]"`
-          }]
-        })
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ description: desc, ville, metier })
       });
       const data = await res.json();
-      const suggestion = data.content?.[0]?.text || '';
+      const suggestion = data.suggestion || '';
       if (suggestion) {
         document.getElementById('ia-suggestion-text').textContent = suggestion;
         document.getElementById('ia-suggestion-devis').style.display = 'block';
