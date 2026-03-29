@@ -269,7 +269,9 @@ h1, h2, h3 { font-family: 'Bricolage Grotesque', sans-serif; }
 .s-attente { background: var(--amber-light); color: var(--amber); }
 .s-accepte { background: var(--accent-light); color: var(--accent-dark); }
 .s-refuse { background: var(--danger-light); color: var(--danger); }
-.s-envoye { background: #e0f2fe; color: #0369a1; }
+.s-envoye    { background: #e0f2fe; color: #0369a1; }
+.s-brouillon { background: #f3f4f6; color: #6b7280; }
+.s-refuse    { background: #fee2e2; color: #991b1b; }
 .s-cours { background: #ede9fe; color: #5b21b6; }
 .s-termine { background: var(--accent-light); color: var(--accent-dark); }
 
@@ -1204,6 +1206,36 @@ function afficherPage(id) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.getElementById(id).classList.add('active');
   window.scrollTo(0, 0);
+  if (id === 'page-dashboard') chargerDerniersDevis();
+}
+
+async function chargerDerniersDevis() {
+  const liste = document.getElementById('liste-derniers-devis');
+  if (!liste) return;
+  liste.innerHTML = '<div class="list-loading">Chargement…</div>';
+  const user = JSON.parse(localStorage.getItem('artidevis_user') || '{}');
+  const token = localStorage.getItem('artidevis_token') || '';
+  if (!user.id) { liste.innerHTML = ''; return; }
+  const BADGE = {
+    brouillon: { cls: 's-brouillon', label: 'Brouillon' },
+    envoye:    { cls: 's-envoye',    label: 'Envoyé' },
+    accepte:   { cls: 's-accepte',   label: 'Accepté' },
+    refuse:    { cls: 's-refuse',    label: 'Refusé' }
+  };
+  try {
+    const url = SUPABASE_URL + '/rest/v1/devis?select=client_nom,description,montant_acompte,statut,created_at&artisan_id=eq.' + user.id + '&order=created_at.desc&limit=5';
+    const res = await fetch(url, { headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + token } });
+    if (!res.ok) throw new Error('Erreur ' + res.status);
+    const devis = await res.json();
+    if (!devis.length) { liste.innerHTML = '<div class="list-loading">Aucun devis pour l’instant.</div>'; return; }
+    liste.innerHTML = devis.map(d => {
+      const b = BADGE[d.statut] || { cls: 's-attente', label: 'En attente' };
+      const m = d.montant_acompte != null ? Number(d.montant_acompte).toLocaleString('fr-FR') + ' €' : '—';
+      return '<div class="list-card"><div class="list-card-left"><div class="list-card-name">' + (d.client_nom || '—') + '</div><div class="list-card-meta">' + (d.description || '') + '</div></div><div class="list-card-right"><div class="list-card-amount">' + m + '</div><span class="status-pill ' + b.cls + '">' + b.label + '</span></div></div>';
+    }).join('');
+  } catch (e) {
+    liste.innerHTML = '<div class="list-loading">Impossible de charger les devis.</div>';
+  }
 }
 
 function navVers(section) {
