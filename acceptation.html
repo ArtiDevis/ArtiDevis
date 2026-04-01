@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+  <title>Réponse au devis — ArtiDevis</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #F7F6F2; min-height: 100vh; display: flex; flex-direction: column; align-items: center; padding: 24px 16px; }
+    .logo-wrap { margin-bottom: 32px; text-align: center; }
+    .logo-text { font-size: 26px; font-weight: 800; color: #2D6A4F; letter-spacing: -0.5px; }
+    .logo-sub { font-size: 12px; color: #8a8478; margin-top: 2px; letter-spacing: 1px; text-transform: uppercase; }
+    .card { background: #fff; border-radius: 20px; padding: 28px 24px; width: 100%; max-width: 480px; box-shadow: 0 4px 24px rgba(0,0,0,0.08); }
+    #state-loading { text-align: center; padding: 20px 0; }
+    .spinner { width: 40px; height: 40px; border: 3px solid #D8F3DC; border-top-color: #2D6A4F; border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 16px; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .loading-text { font-size: 14px; color: #8a8478; }
+    #state-choice { display: none; }
+    .choice-title { font-size: 18px; font-weight: 800; color: #1c1a17; margin-bottom: 6px; }
+    .choice-sub { font-size: 13px; color: #8a8478; margin-bottom: 24px; line-height: 1.5; }
+    .devis-info { background: #F7F6F2; border-radius: 12px; padding: 14px 16px; margin-bottom: 24px; }
+    .devis-info-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+    .devis-info-row:last-child { margin-bottom: 0; }
+    .devis-info-label { font-size: 12px; color: #8a8478; }
+    .devis-info-value { font-size: 13px; font-weight: 700; color: #1c1a17; }
+    .devis-montant { font-size: 20px; font-weight: 800; color: #2D6A4F; }
+    .btn-group { display: flex; flex-direction: column; gap: 12px; }
+    .btn { width: 100%; padding: 16px; border: none; border-radius: 14px; font-size: 16px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; transition: opacity 0.15s, transform 0.1s; }
+    .btn:active { opacity: 0.85; transform: scale(0.98); }
+    .btn-accepter { background: #2D6A4F; color: #fff; }
+    .btn-refuser { background: #fee2e2; color: #991b1b; }
+    .btn-icon { font-size: 20px; }
+    #state-confirm { display: none; text-align: center; padding: 10px 0; }
+    .confirm-icon { font-size: 64px; margin-bottom: 16px; }
+    .confirm-title { font-size: 22px; font-weight: 800; color: #1c1a17; margin-bottom: 10px; }
+    .confirm-text { font-size: 14px; color: #8a8478; line-height: 1.6; }
+    .confirm-badge { display: inline-block; margin-top: 20px; padding: 8px 16px; border-radius: 20px; font-size: 13px; font-weight: 700; }
+    .badge-accepte { background: #D8F3DC; color: #166534; }
+    .badge-refuse { background: #fee2e2; color: #991b1b; }
+    #state-error { display: none; text-align: center; padding: 10px 0; }
+    .error-icon { font-size: 48px; margin-bottom: 12px; }
+    .error-title { font-size: 18px; font-weight: 800; color: #1c1a17; margin-bottom: 8px; }
+    .error-text { font-size: 13px; color: #8a8478; line-height: 1.5; }
+    #state-already { display: none; text-align: center; padding: 10px 0; }
+    .footer { margin-top: 24px; text-align: center; font-size: 11px; color: #8a8478; }
+  </style>
+</head>
+<body>
+  <div class="logo-wrap">
+    <div class="logo-text">ArtiDevis</div>
+    <div class="logo-sub">Gestion de devis</div>
+  </div>
+  <div class="card">
+    <div id="state-loading"><div class="spinner"></div><div class="loading-text">Chargement du devis…</div></div>
+    <div id="state-choice">
+      <div class="choice-title">Répondre au devis</div>
+      <div class="choice-sub" id="choice-sub">Bonjour, veuillez choisir votre réponse pour ce devis.</div>
+      <div class="devis-info" id="devis-info" style="display:none;">
+        <div class="devis-info-row"><span class="devis-info-label">Artisan</span><span class="devis-info-value" id="info-artisan">—</span></div>
+        <div class="devis-info-row"><span class="devis-info-label">Prestation</span><span class="devis-info-value" id="info-description">—</span></div>
+        <div class="devis-info-row"><span class="devis-info-label">Montant TTC</span><span class="devis-montant" id="info-montant">—</span></div>
+      </div>
+      <div class="btn-group">
+        <button class="btn btn-accepter" id="btn-accepter" onclick="repondre('accepte')"><span class="btn-icon">✅</span>Accepter le devis</button>
+        <button class="btn btn-refuser" id="btn-refuser" onclick="repondre('refuse')"><span class="btn-icon">❌</span>Refuser le devis</button>
+      </div>
+    </div>
+    <div id="state-confirm">
+      <div class="confirm-icon" id="confirm-icon">✅</div>
+      <div class="confirm-title" id="confirm-title">Devis accepté !</div>
+      <div class="confirm-text" id="confirm-text">Votre réponse a bien été enregistrée. L'artisan a été notifié.</div>
+      <div class="confirm-badge" id="confirm-badge"></div>
+    </div>
+    <div id="state-already">
+      <div class="confirm-icon">📋</div>
+      <div class="confirm-title">Devis déjà traité</div>
+      <div class="confirm-text" id="already-text">Ce devis a déjà reçu une réponse.</div>
+    </div>
+    <div id="state-error">
+      <div class="error-icon">⚠️</div>
+      <div class="error-title">Lien invalide</div>
+      <div class="error-text" id="error-text">Ce lien est invalide ou a expiré. Contactez directement l'artisan.</div>
+    </div>
+  </div>
+  <div class="footer">Propulsé par ArtiDevis · Gestion de devis pour artisans</div>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+  <script>
+    const SUPABASE_URL='https://dtpzswmkjtvfrxllnuxu.supabase.co';
+    const SUPABASE_ANON_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR0cHpzd21ranR2ZnJ4bGxudXh1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQyOTE0MDcsImV4cCI6MjA4OTg2NzQwN30.7ialzf1MtrY12aBi-eoFoLduTnvxjwwcdx-gNx0fjfM';
+    const db=supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
+    const params=new URLSearchParams(window.location.search);
+    const devisId=params.get('id');
+    const action=params.get('action');
+    let devisData=null;
+    function showState(n){['loading','choice','confirm','already','error'].forEach(s=>document.getElementById('state-'+s).style.display=s===n?'':'none');}
+    function fmt(n){return Number(n).toLocaleString('fr-FR',{maximumFractionDigits:0})+' €';}
+    async function init(){
+      if(!devisId){showState('error');return;}
+      const{data,error}=await db.from('devis').select('id,client_nom,description,total_ttc,statut,artisan_id,numero').eq('id',devisId).single();
+      if(error||!data){showState('error');return;}
+      devisData=data;
+      if(data.statut==='accepte'||data.statut==='refuse'){document.getElementById('already-text').textContent='Ce devis a été '+(data.statut==='accepte'?'accepté ✅':'refusé ❌')+'.';showState('already');return;}
+      const{data:ar}=await db.from('artisan').select('prenom,nom').eq('id',data.artisan_id).single();
+      const aNom=ar?[ar.prenom,ar.nom].filter(Boolean).join(' '):'Votre artisan';
+      document.getElementById('choice-sub').textContent='Bonjour '+data.client_nom+', répondez au devis de '+aNom+'.';
+      document.getElementById('info-artisan').textContent=aNom;
+      document.getElementById('info-description').textContent=data.description||'Prestation artisanale';
+      document.getElementById('info-montant').textContent=data.total_ttc!=null?fmt(data.total_ttc):'—';
+      document.getElementById('devis-info').style.display='';
+      if(action==='accepter'||action==='refuser'){showState('loading');await repondre(action==='accepter'?'accepte':'refuse');}
+      else showState('choice');
+    }
+    async function repondre(statut){
+      ['btn-accepter','btn-refuser'].forEach(id=>{const b=document.getElementById(id);if(b)b.disabled=true;});
+      showState('loading');
+      try{
+        const{error:ue}=await db.from('devis').update({statut}).eq('id',devisId);
+        if(ue)throw ue;
+        if(devisData?.artisan_id){try{const{data:ap}=await db.from('artisan').select('push_token').eq('id',devisData.artisan_id).single();if(ap?.push_token){const e=statut==='accepte'?'🎉':'😔';await fetch('https://exp.host/--/api/v2/push/send',{method:'POST',headers:{'Content-Type':'application/json','Accept':'application/json'},body:JSON.stringify({to:ap.push_token,title:'Devis '+(statut==='accepte'?'accepté':'refusé')+' '+e,body:devisData.client_nom+(statut==='accepte'?' a accepté votre devis ! '+e:' a refusé votre devis.'),sound:'default',data:{devisId,statut}})});}}catch(e){}}
+        const acc=statut==='accepte';
+        document.getElementById('confirm-icon').textContent=acc?'✅':'❌';
+        document.getElementById('confirm-title').textContent=acc?'Devis accepté !':'Devis refusé';
+        document.getElementById('confirm-text').textContent=acc?"Votre accord a été enregistré. L'artisan va vous contacter.":"Votre refus a été enregistré.";
+        const badge=document.getElementById('confirm-badge');badge.textContent=acc?'✅ Devis accepté':'❌ Devis refusé';badge.className='confirm-badge '+(acc?'badge-accepte':'badge-refuse');
+        showState('confirm');
+      }catch(err){showState('error');['btn-accepter','btn-refuser'].forEach(id=>{const b=document.getElementById(id);if(b)b.disabled=false;});}
+    }
+    init();
+  </script>
+</body>
+</html>
