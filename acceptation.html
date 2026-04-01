@@ -3,128 +3,735 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
-  <title>Réponse au devis — ArtiDevis</title>
+  <title>Signature électronique — ArtiDevis</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #F7F6F2; min-height: 100vh; display: flex; flex-direction: column; align-items: center; padding: 24px 16px; }
-    .logo-wrap { margin-bottom: 32px; text-align: center; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #F7F6F2;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 24px 16px 40px;
+    }
+
+    /* ── Logo ── */
+    .logo-wrap { margin-bottom: 20px; text-align: center; }
     .logo-text { font-size: 26px; font-weight: 800; color: #2D6A4F; letter-spacing: -0.5px; }
-    .logo-sub { font-size: 12px; color: #8a8478; margin-top: 2px; letter-spacing: 1px; text-transform: uppercase; }
-    .card { background: #fff; border-radius: 20px; padding: 28px 24px; width: 100%; max-width: 480px; box-shadow: 0 4px 24px rgba(0,0,0,0.08); }
+    .logo-sub  { font-size: 11px; color: #8a8478; margin-top: 3px; letter-spacing: 1.5px; text-transform: uppercase; }
+
+    /* ── Legal badge ── */
+    .legal-badge {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: #fff8e1; border: 1px solid #fde68a;
+      border-radius: 20px; padding: 6px 14px;
+      font-size: 11px; color: #92400e; font-weight: 600;
+      margin-bottom: 20px;
+    }
+
+    /* ── Card ── */
+    .card {
+      background: #fff;
+      border-radius: 20px;
+      padding: 24px 20px;
+      width: 100%;
+      max-width: 540px;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+      margin-bottom: 12px;
+    }
+    .card-title {
+      font-size: 11px; font-weight: 700; color: #8a8478;
+      text-transform: uppercase; letter-spacing: 1px;
+      margin-bottom: 14px;
+    }
+
+    /* ── Loading ── */
     #state-loading { text-align: center; padding: 20px 0; }
-    .spinner { width: 40px; height: 40px; border: 3px solid #D8F3DC; border-top-color: #2D6A4F; border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 16px; }
+    .spinner {
+      width: 40px; height: 40px;
+      border: 3px solid #D8F3DC; border-top-color: #2D6A4F;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin: 0 auto 16px;
+    }
     @keyframes spin { to { transform: rotate(360deg); } }
     .loading-text { font-size: 14px; color: #8a8478; }
+
+    /* ── Parties ── */
     #state-choice { display: none; }
-    .choice-title { font-size: 18px; font-weight: 800; color: #1c1a17; margin-bottom: 6px; }
-    .choice-sub { font-size: 13px; color: #8a8478; margin-bottom: 24px; line-height: 1.5; }
-    .devis-info { background: #F7F6F2; border-radius: 12px; padding: 14px 16px; margin-bottom: 24px; }
-    .devis-info-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
-    .devis-info-row:last-child { margin-bottom: 0; }
-    .devis-info-label { font-size: 12px; color: #8a8478; }
-    .devis-info-value { font-size: 13px; font-weight: 700; color: #1c1a17; }
-    .devis-montant { font-size: 20px; font-weight: 800; color: #2D6A4F; }
-    .btn-group { display: flex; flex-direction: column; gap: 12px; }
-    .btn { width: 100%; padding: 16px; border: none; border-radius: 14px; font-size: 16px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; transition: opacity 0.15s, transform 0.1s; }
+    .parties-grid {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
+      margin-bottom: 16px;
+    }
+    .partie-box {
+      background: #F7F6F2; border-radius: 10px; padding: 12px;
+    }
+    .partie-label { font-size: 10px; font-weight: 700; color: #8a8478; text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 6px; }
+    .partie-nom { font-size: 13px; font-weight: 700; color: #1c1a17; }
+    .partie-meta { font-size: 11px; color: #8a8478; margin-top: 2px; }
+
+    /* ── Devis référence ── */
+    .devis-ref {
+      border-left: 4px solid #2D6A4F;
+      padding: 6px 0 6px 12px;
+      margin-bottom: 16px;
+    }
+    .devis-ref-label { font-size: 10px; font-weight: 700; color: #8a8478; text-transform: uppercase; letter-spacing: 0.8px; }
+    .devis-ref-num { font-size: 20px; font-weight: 800; color: #2D6A4F; margin-top: 2px; }
+
+    /* ── Prestations ── */
+    .prestations-table { width: 100%; border-collapse: collapse; margin-bottom: 14px; }
+    .prestations-table th {
+      padding: 8px 10px; font-size: 10px; font-weight: 700; color: #8a8478;
+      text-transform: uppercase; letter-spacing: 0.5px;
+      border-bottom: 2px solid #e8e4dc; background: #F7F6F2;
+    }
+    .prestations-table th:not(:first-child) { text-align: right; }
+    .prestations-table td { padding: 9px 10px; font-size: 12px; color: #1c1a17; border-bottom: 1px solid #f0ede8; }
+    .prestations-table td:not(:first-child) { text-align: right; color: #555; }
+    .prestations-table td.sous-total { font-weight: 700; color: #1c1a17; }
+
+    /* ── Totaux ── */
+    .totaux-box { background: #F7F6F2; border-radius: 10px; padding: 14px 16px; }
+    .totaux-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; font-size: 13px; }
+    .totaux-row span:first-child { color: #8a8478; }
+    .totaux-row span:last-child  { color: #1c1a17; font-weight: 600; }
+    .totaux-divider { height: 1px; background: #e8e4dc; margin: 8px 0; }
+    .totaux-ttc { display: flex; justify-content: space-between; align-items: center; }
+    .totaux-ttc-label { font-size: 15px; font-weight: 700; color: #1c1a17; }
+    .totaux-ttc-value { font-size: 22px; font-weight: 800; color: #2D6A4F; }
+    .mention-tva { font-size: 10px; color: #8a8478; font-style: italic; margin-top: 6px; }
+
+    /* ── Conditions ── */
+    .conditions-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .condition-box { background: #fffbeb; border: 1px solid #fde68a; border-radius: 10px; padding: 12px; }
+    .condition-label { font-size: 10px; font-weight: 700; color: #92400e; text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 5px; }
+    .condition-value { font-size: 12px; color: #1c1a17; }
+
+    /* ── Signature section ── */
+    .signature-title {
+      font-size: 16px; font-weight: 800; color: #1c1a17;
+      margin-bottom: 6px;
+    }
+    .signature-sub {
+      font-size: 12px; color: #8a8478; margin-bottom: 18px; line-height: 1.5;
+    }
+    .field-group { margin-bottom: 16px; }
+    .field-label { font-size: 12px; font-weight: 600; color: #1c1a17; margin-bottom: 6px; display: block; }
+    .field-input {
+      width: 100%; border: 1.5px solid #e8e4dc; border-radius: 10px;
+      padding: 12px 14px; font-size: 14px; color: #1c1a17;
+      background: #F7F6F2; font-family: inherit; outline: none;
+      transition: border-color 0.15s;
+    }
+    .field-input:focus { border-color: #2D6A4F; background: #fff; }
+    .field-input.error { border-color: #ef4444; }
+
+    /* RGPD checkbox */
+    .rgpd-row {
+      display: flex; align-items: flex-start; gap: 10px;
+      background: #F7F6F2; border-radius: 10px; padding: 12px;
+      margin-bottom: 20px;
+    }
+    .rgpd-checkbox { width: 18px; height: 18px; flex-shrink: 0; margin-top: 1px; accent-color: #2D6A4F; cursor: pointer; }
+    .rgpd-text { font-size: 11px; color: #555; line-height: 1.6; }
+    .rgpd-text a { color: #2D6A4F; }
+
+    /* ── Boutons ── */
+    .btn {
+      width: 100%; padding: 16px; border: none; border-radius: 14px;
+      font-size: 15px; font-weight: 700; cursor: pointer;
+      display: flex; align-items: center; justify-content: center; gap: 10px;
+      transition: opacity 0.15s, transform 0.1s;
+      font-family: inherit;
+    }
     .btn:active { opacity: 0.85; transform: scale(0.98); }
-    .btn-accepter { background: #2D6A4F; color: #fff; }
-    .btn-refuser { background: #fee2e2; color: #991b1b; }
-    .btn-icon { font-size: 20px; }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .btn-signer { background: #2D6A4F; color: #fff; margin-bottom: 10px; }
+    .btn-refuser-show { background: #F7F6F2; color: #8a8478; border: 1.5px solid #e8e4dc; }
+
+    /* Refus section */
+    #refus-section { display: none; margin-top: 10px; }
+    .refus-label { font-size: 12px; font-weight: 600; color: #1c1a17; margin-bottom: 6px; display: block; }
+    .refus-textarea {
+      width: 100%; min-height: 80px; border: 1.5px solid #e8e4dc;
+      border-radius: 10px; padding: 12px 14px; font-size: 13px;
+      color: #1c1a17; background: #F7F6F2; font-family: inherit;
+      resize: vertical; outline: none; margin-bottom: 10px;
+    }
+    .btn-refuser-confirm { background: #fee2e2; color: #991b1b; }
+
+    /* ── Confirmation ── */
     #state-confirm { display: none; text-align: center; padding: 10px 0; }
     .confirm-icon { font-size: 64px; margin-bottom: 16px; }
     .confirm-title { font-size: 22px; font-weight: 800; color: #1c1a17; margin-bottom: 10px; }
-    .confirm-text { font-size: 14px; color: #8a8478; line-height: 1.6; }
-    .confirm-badge { display: inline-block; margin-top: 20px; padding: 8px 16px; border-radius: 20px; font-size: 13px; font-weight: 700; }
+    .confirm-text { font-size: 13px; color: #8a8478; line-height: 1.6; margin-bottom: 16px; }
+    .confirm-legal {
+      background: #f0fdf4; border: 1px solid #86efac;
+      border-radius: 10px; padding: 12px 14px;
+      font-size: 11px; color: #166534; line-height: 1.6; text-align: left;
+    }
+    .confirm-badge {
+      display: inline-block; margin-top: 16px; padding: 8px 18px;
+      border-radius: 20px; font-size: 13px; font-weight: 700;
+    }
     .badge-accepte { background: #D8F3DC; color: #166534; }
-    .badge-refuse { background: #fee2e2; color: #991b1b; }
-    #state-error { display: none; text-align: center; padding: 10px 0; }
-    .error-icon { font-size: 48px; margin-bottom: 12px; }
-    .error-title { font-size: 18px; font-weight: 800; color: #1c1a17; margin-bottom: 8px; }
-    .error-text { font-size: 13px; color: #8a8478; line-height: 1.5; }
+    .badge-refuse  { background: #fee2e2; color: #991b1b; }
+
+    /* ── Erreur / Déjà traité ── */
+    #state-error  { display: none; text-align: center; padding: 10px 0; }
     #state-already { display: none; text-align: center; padding: 10px 0; }
-    .footer { margin-top: 24px; text-align: center; font-size: 11px; color: #8a8478; }
+    .state-icon { font-size: 48px; margin-bottom: 12px; }
+    .state-title { font-size: 18px; font-weight: 800; color: #1c1a17; margin-bottom: 8px; }
+    .state-text { font-size: 13px; color: #8a8478; line-height: 1.5; }
+
+    /* ── Footer RGPD ── */
+    .footer {
+      max-width: 540px; text-align: center;
+      font-size: 10px; color: #aaa; line-height: 1.6; margin-top: 16px;
+    }
+
+    @media (max-width: 380px) {
+      .parties-grid { grid-template-columns: 1fr; }
+      .conditions-grid { grid-template-columns: 1fr; }
+    }
   </style>
 </head>
 <body>
+
+  <!-- Logo -->
   <div class="logo-wrap">
     <div class="logo-text">ArtiDevis</div>
-    <div class="logo-sub">Gestion de devis</div>
+    <div class="logo-sub">Gestion de devis pour artisans</div>
   </div>
-  <div class="card">
-    <div id="state-loading"><div class="spinner"></div><div class="loading-text">Chargement du devis…</div></div>
-    <div id="state-choice">
-      <div class="choice-title">Répondre au devis</div>
-      <div class="choice-sub" id="choice-sub">Bonjour, veuillez choisir votre réponse pour ce devis.</div>
-      <div class="devis-info" id="devis-info" style="display:none;">
-        <div class="devis-info-row"><span class="devis-info-label">Artisan</span><span class="devis-info-value" id="info-artisan">—</span></div>
-        <div class="devis-info-row"><span class="devis-info-label">Prestation</span><span class="devis-info-value" id="info-description">—</span></div>
-        <div class="devis-info-row"><span class="devis-info-label">Montant TTC</span><span class="devis-montant" id="info-montant">—</span></div>
-      </div>
-      <div class="btn-group">
-        <button class="btn btn-accepter" id="btn-accepter" onclick="repondre('accepte')"><span class="btn-icon">✅</span>Accepter le devis</button>
-        <button class="btn btn-refuser" id="btn-refuser" onclick="repondre('refuse')"><span class="btn-icon">❌</span>Refuser le devis</button>
-      </div>
-    </div>
-    <div id="state-confirm">
-      <div class="confirm-icon" id="confirm-icon">✅</div>
-      <div class="confirm-title" id="confirm-title">Devis accepté !</div>
-      <div class="confirm-text" id="confirm-text">Votre réponse a bien été enregistrée. L'artisan a été notifié.</div>
-      <div class="confirm-badge" id="confirm-badge"></div>
-    </div>
-    <div id="state-already">
-      <div class="confirm-icon">📋</div>
-      <div class="confirm-title">Devis déjà traité</div>
-      <div class="confirm-text" id="already-text">Ce devis a déjà reçu une réponse.</div>
-    </div>
-    <div id="state-error">
-      <div class="error-icon">⚠️</div>
-      <div class="error-title">Lien invalide</div>
-      <div class="error-text" id="error-text">Ce lien est invalide ou a expiré. Contactez directement l'artisan.</div>
-    </div>
+
+  <!-- Badge légal -->
+  <div class="legal-badge">
+    🔒 Document légalement opposable — Signature électronique (Art. 1366 C. Civil)
   </div>
-  <div class="footer">Propulsé par ArtiDevis · Gestion de devis pour artisans</div>
+
+  <!-- ── ÉTAT CHARGEMENT ── -->
+  <div class="card" id="state-loading">
+    <div class="spinner"></div>
+    <div class="loading-text">Chargement du devis…</div>
+  </div>
+
+  <!-- ── ÉTAT CHOIX ── -->
+  <div id="state-choice" style="width:100%;max-width:540px;">
+
+    <!-- Parties artisan / client -->
+    <div class="card">
+      <div class="card-title">Parties</div>
+      <div class="parties-grid">
+        <div class="partie-box">
+          <div class="partie-label">Artisan</div>
+          <div class="partie-nom" id="info-artisan-nom">—</div>
+          <div class="partie-meta" id="info-artisan-siret"></div>
+          <div class="partie-meta" id="info-artisan-tel"></div>
+          <div class="partie-meta" id="info-artisan-adresse"></div>
+        </div>
+        <div class="partie-box">
+          <div class="partie-label">Client</div>
+          <div class="partie-nom" id="info-client-nom">—</div>
+          <div class="partie-meta" id="info-client-email"></div>
+          <div class="partie-meta" id="info-client-tel"></div>
+          <div class="partie-meta" id="info-client-adresse"></div>
+        </div>
+      </div>
+
+      <!-- Référence devis -->
+      <div class="devis-ref">
+        <div class="devis-ref-label">Devis N°</div>
+        <div class="devis-ref-num" id="info-numero">—</div>
+      </div>
+    </div>
+
+    <!-- Prestations -->
+    <div class="card">
+      <div class="card-title">Détail des prestations</div>
+      <table class="prestations-table">
+        <thead>
+          <tr>
+            <th style="text-align:left;">Désignation</th>
+            <th>Qté</th>
+            <th>P.U. HT</th>
+            <th>Sous-total HT</th>
+          </tr>
+        </thead>
+        <tbody id="prestations-body">
+          <tr><td colspan="4" style="text-align:center;color:#8a8478;padding:12px;">Chargement…</td></tr>
+        </tbody>
+      </table>
+
+      <!-- Totaux -->
+      <div class="totaux-box">
+        <div class="totaux-row">
+          <span>Total HT</span>
+          <span id="total-ht">—</span>
+        </div>
+        <div class="totaux-row">
+          <span>TVA (<span id="tva-pct">—</span>)</span>
+          <span id="total-tva">—</span>
+        </div>
+        <div class="totaux-divider"></div>
+        <div class="totaux-ttc">
+          <span class="totaux-ttc-label">Total TTC</span>
+          <span class="totaux-ttc-value" id="total-ttc">—</span>
+        </div>
+        <div class="mention-tva" id="mention-tva-text" style="display:none;"></div>
+      </div>
+    </div>
+
+    <!-- Conditions (si présentes) -->
+    <div class="card" id="conditions-card" style="display:none;">
+      <div class="card-title">Conditions du contrat</div>
+      <div class="conditions-grid">
+        <div class="condition-box" id="cond-paiement-box" style="display:none;">
+          <div class="condition-label">Conditions de paiement</div>
+          <div class="condition-value" id="cond-paiement-value"></div>
+        </div>
+        <div class="condition-box" id="cond-delai-box" style="display:none;">
+          <div class="condition-label">Délai d'exécution</div>
+          <div class="condition-value" id="cond-delai-value"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Signature électronique -->
+    <div class="card">
+      <div class="signature-title">Votre signature électronique</div>
+      <div class="signature-sub">
+        En signant ce document, vous acceptez le devis dans son intégralité. Cette signature électronique a valeur légale conformément à l'article 1366 du Code Civil.
+      </div>
+
+      <!-- Nom complet -->
+      <div class="field-group">
+        <label class="field-label" for="nom-signataire">Votre nom complet *</label>
+        <input
+          type="text"
+          id="nom-signataire"
+          class="field-input"
+          placeholder="Prénom NOM"
+          autocomplete="name"
+          autocapitalize="words"
+        />
+      </div>
+
+      <!-- RGPD -->
+      <div class="rgpd-row">
+        <input type="checkbox" class="rgpd-checkbox" id="rgpd-check" />
+        <div class="rgpd-text">
+          J'accepte que mes données (nom, adresse IP, horodatage) soient conservées à titre de preuve de signature conformément au RGPD et à l'article L123-22 du Code de Commerce. Ces données ne seront pas transmises à des tiers.
+        </div>
+      </div>
+
+      <!-- Bouton signer -->
+      <button class="btn btn-signer" id="btn-signer" onclick="signerDevis()">
+        ✅ &nbsp;Signer et accepter le devis
+      </button>
+
+      <!-- Bouton refuser -->
+      <button class="btn btn-refuser-show" id="btn-refuser-show" onclick="toggleRefus()">
+        ❌ &nbsp;Refuser le devis
+      </button>
+
+      <!-- Formulaire refus -->
+      <div id="refus-section">
+        <label class="refus-label" for="motif-refus">Motif du refus (optionnel)</label>
+        <textarea
+          id="motif-refus"
+          class="refus-textarea"
+          placeholder="Ex : prix trop élevé, délai ne convient pas…"
+        ></textarea>
+        <button class="btn btn-refuser-confirm" onclick="refuserDevis()">
+          Confirmer le refus
+        </button>
+      </div>
+    </div>
+
+  </div><!-- /#state-choice -->
+
+  <!-- ── ÉTAT CONFIRMÉ ── -->
+  <div class="card" id="state-confirm">
+    <div class="confirm-icon" id="confirm-icon">✅</div>
+    <div class="confirm-title" id="confirm-title">Devis accepté !</div>
+    <div class="confirm-text" id="confirm-text">
+      Votre accord a bien été enregistré. L'artisan va vous contacter pour la suite.
+    </div>
+    <div class="confirm-legal" id="confirm-legal" style="display:none;">
+      🔒 <strong>Preuve de signature électronique enregistrée</strong><br/>
+      Signataire : <span id="proof-nom"></span><br/>
+      Date et heure : <span id="proof-date"></span><br/>
+      Adresse IP : <span id="proof-ip"></span><br/>
+      <em style="font-size:10px;">Conformément à l'article 1366 du Code Civil. Document conservé 10 ans (art. L123-22 C. Commerce).</em>
+    </div>
+    <div class="confirm-badge" id="confirm-badge"></div>
+  </div>
+
+  <!-- ── ÉTAT DÉJÀ TRAITÉ ── -->
+  <div class="card" id="state-already">
+    <div class="state-icon">📋</div>
+    <div class="state-title">Devis déjà traité</div>
+    <div class="state-text" id="already-text">Ce devis a déjà reçu une réponse. Aucune modification n'est possible.</div>
+  </div>
+
+  <!-- ── ÉTAT ERREUR ── -->
+  <div class="card" id="state-error">
+    <div class="state-icon">⚠️</div>
+    <div class="state-title">Lien invalide</div>
+    <div class="state-text" id="error-text">Ce lien est invalide ou a expiré. Contactez directement l'artisan.</div>
+  </div>
+
+  <!-- Footer RGPD -->
+  <div class="footer">
+    Propulsé par ArtiDevis · Gestion de devis pour artisans<br/>
+    Vos données sont traitées conformément au RGPD (Règlement UE 2016/679) ·
+    Conservation des preuves : 10 ans (art. L123-22 Code de Commerce)
+  </div>
+
+  <!-- Supabase JS CDN -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+
   <script>
-    const SUPABASE_URL='https://dtpzswmkjtvfrxllnuxu.supabase.co';
-    const SUPABASE_ANON_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR0cHpzd21ranR2ZnJ4bGxudXh1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQyOTE0MDcsImV4cCI6MjA4OTg2NzQwN30.7ialzf1MtrY12aBi-eoFoLduTnvxjwwcdx-gNx0fjfM';
-    const db=supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
-    const params=new URLSearchParams(window.location.search);
-    const devisId=params.get('id');
-    const action=params.get('action');
-    let devisData=null;
-    function showState(n){['loading','choice','confirm','already','error'].forEach(s=>document.getElementById('state-'+s).style.display=s===n?'':'none');}
-    function fmt(n){return Number(n).toLocaleString('fr-FR',{maximumFractionDigits:0})+' €';}
-    async function init(){
-      if(!devisId){showState('error');return;}
-      const{data,error}=await db.from('devis').select('id,client_nom,description,total_ttc,statut,artisan_id,numero').eq('id',devisId).single();
-      if(error||!data){showState('error');return;}
-      devisData=data;
-      if(data.statut==='accepte'||data.statut==='refuse'){document.getElementById('already-text').textContent='Ce devis a été '+(data.statut==='accepte'?'accepté ✅':'refusé ❌')+'.';showState('already');return;}
-      const{data:ar}=await db.from('artisan').select('prenom,nom').eq('id',data.artisan_id).single();
-      const aNom=ar?[ar.prenom,ar.nom].filter(Boolean).join(' '):'Votre artisan';
-      document.getElementById('choice-sub').textContent='Bonjour '+data.client_nom+', répondez au devis de '+aNom+'.';
-      document.getElementById('info-artisan').textContent=aNom;
-      document.getElementById('info-description').textContent=data.description||'Prestation artisanale';
-      document.getElementById('info-montant').textContent=data.total_ttc!=null?fmt(data.total_ttc):'—';
-      document.getElementById('devis-info').style.display='';
-      if(action==='accepter'||action==='refuser'){showState('loading');await repondre(action==='accepter'?'accepte':'refuse');}
-      else showState('choice');
+    const SUPABASE_URL      = 'https://dtpzswmkjtvfrxllnuxu.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR0cHpzd21ranR2ZnJ4bGxudXh1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQyOTE0MDcsImV4cCI6MjA4OTg2NzQwN30.7ialzf1MtrY12aBi-eoFoLduTnvxjwwcdx-gNx0fjfM';
+
+    const { createClient } = supabase;
+    const db = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    // ── Params URL ───────────────────────────────────────────────────────────
+    const params   = new URLSearchParams(window.location.search);
+    const devisId  = params.get('id');
+    const numParam = params.get('num');     // numéro du devis pré-rempli (depuis email)
+    const clientParam = params.get('client'); // nom client pré-rempli
+    const actionParam = params.get('action'); // 'refuser' pour pré-sélectionner refus
+
+    let devisData   = null;
+    let artisanData = null;
+    let refusVisible = false;
+
+    // ── Helpers ──────────────────────────────────────────────────────────────
+    function formatEur(n) {
+      return Number(n).toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' €';
     }
-    async function repondre(statut){
-      ['btn-accepter','btn-refuser'].forEach(id=>{const b=document.getElementById(id);if(b)b.disabled=true;});
-      showState('loading');
-      try{
-        const{error:ue}=await db.from('devis').update({statut}).eq('id',devisId);
-        if(ue)throw ue;
-        if(devisData?.artisan_id){try{const{data:ap}=await db.from('artisan').select('push_token').eq('id',devisData.artisan_id).single();if(ap?.push_token){const e=statut==='accepte'?'🎉':'😔';await fetch('https://exp.host/--/api/v2/push/send',{method:'POST',headers:{'Content-Type':'application/json','Accept':'application/json'},body:JSON.stringify({to:ap.push_token,title:'Devis '+(statut==='accepte'?'accepté':'refusé')+' '+e,body:devisData.client_nom+(statut==='accepte'?' a accepté votre devis ! '+e:' a refusé votre devis.'),sound:'default',data:{devisId,statut}})});}}catch(e){}}
-        const acc=statut==='accepte';
-        document.getElementById('confirm-icon').textContent=acc?'✅':'❌';
-        document.getElementById('confirm-title').textContent=acc?'Devis accepté !':'Devis refusé';
-        document.getElementById('confirm-text').textContent=acc?"Votre accord a été enregistré. L'artisan va vous contacter.":"Votre refus a été enregistré.";
-        const badge=document.getElementById('confirm-badge');badge.textContent=acc?'✅ Devis accepté':'❌ Devis refusé';badge.className='confirm-badge '+(acc?'badge-accepte':'badge-refuse');
+
+    function formatDateHeure(d) {
+      return d.toLocaleDateString('fr-FR', { day:'2-digit', month:'2-digit', year:'numeric' })
+        + ' à ' + d.toLocaleTimeString('fr-FR', { hour:'2-digit', minute:'2-digit', second:'2-digit' });
+    }
+
+    function setText(id, val) {
+      const el = document.getElementById(id);
+      if (el) el.textContent = val || '';
+    }
+
+    function showState(name) {
+      ['loading', 'choice', 'confirm', 'already', 'error'].forEach(s => {
+        const el = document.getElementById('state-' + s);
+        if (!el) return;
+        el.style.display = s === name ? (s === 'choice' ? 'block' : '') : 'none';
+      });
+    }
+
+    // ── Toggle refus ─────────────────────────────────────────────────────────
+    function toggleRefus() {
+      refusVisible = !refusVisible;
+      document.getElementById('refus-section').style.display = refusVisible ? 'block' : 'none';
+      document.getElementById('btn-refuser-show').textContent =
+        refusVisible ? '← Annuler' : '❌ \u00a0Refuser le devis';
+    }
+
+    // ── Init : chargement du devis ────────────────────────────────────────────
+    async function init() {
+      if (!devisId) {
+        showState('error');
+        setText('error-text', 'Aucun identifiant de devis dans le lien. Vérifiez que vous avez bien cliqué sur le bouton de votre email.');
+        return;
+      }
+
+      // Pré-remplir le nom signataire depuis le param URL
+      if (clientParam) {
+        document.getElementById('nom-signataire').value = clientParam;
+      }
+
+      // Charger le devis complet
+      const { data, error } = await db
+        .from('devis')
+        .select('id, numero, client_nom, client_email, client_tel, client_adresse, description, total_ht, total_tva, total_ttc, tva_pct, lignes, statut, artisan_id, conditions, delai, mention_tva')
+        .eq('id', devisId)
+        .single();
+
+      if (error || !data) {
+        showState('error');
+        setText('error-text', 'Impossible de charger ce devis. Vérifiez le lien ou contactez l\'artisan directement.');
+        return;
+      }
+
+      devisData = data;
+
+      // Déjà traité ?
+      if (data.statut === 'accepte' || data.statut === 'refuse') {
+        const label = data.statut === 'accepte' ? 'accepté ✅' : 'refusé ❌';
+        setText('already-text', `Ce devis a déjà été ${label}. Aucune modification n'est possible.`);
+        showState('already');
+        return;
+      }
+
+      // Charger artisan
+      const { data: artisan } = await db
+        .from('artisan')
+        .select('prenom, nom, siret, telephone, adresse, email')
+        .eq('id', data.artisan_id)
+        .single();
+
+      artisanData = artisan;
+
+      // ── Remplir les blocs ────────────────────────────────────────────────
+      const artisanNom = artisan
+        ? [artisan.prenom, artisan.nom].filter(Boolean).join(' ')
+        : 'Votre artisan';
+
+      setText('info-artisan-nom', artisanNom);
+      if (artisan?.siret) { setText('info-artisan-siret', 'SIRET : ' + artisan.siret); }
+      if (artisan?.telephone) { setText('info-artisan-tel', artisan.telephone); }
+      if (artisan?.adresse) { setText('info-artisan-adresse', artisan.adresse); }
+
+      setText('info-client-nom', data.client_nom);
+      if (data.client_email) { setText('info-client-email', data.client_email); }
+      if (data.client_tel)   { setText('info-client-tel', data.client_tel); }
+      if (data.client_adresse) { setText('info-client-adresse', data.client_adresse); }
+
+      setText('info-numero', data.numero || numParam || '—');
+
+      // ── Prestations table ────────────────────────────────────────────────
+      const tbody = document.getElementById('prestations-body');
+      const lignes = Array.isArray(data.lignes) && data.lignes.length > 0 ? data.lignes : [];
+      if (lignes.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:#8a8478;padding:12px;">Aucune prestation détaillée</td></tr>';
+      } else {
+        tbody.innerHTML = lignes.map(l => `
+          <tr>
+            <td>${l.description || '—'}</td>
+            <td style="text-align:right;">${l.quantite}</td>
+            <td style="text-align:right;">${formatEur(l.prix_unitaire)}</td>
+            <td class="sous-total" style="text-align:right;">${formatEur(l.sous_total)}</td>
+          </tr>`).join('');
+      }
+
+      // ── Totaux ───────────────────────────────────────────────────────────
+      setText('tva-pct', (data.tva_pct ?? 0) + ' %');
+      setText('total-ht', formatEur(data.total_ht ?? 0));
+      setText('total-tva', formatEur(data.total_tva ?? 0));
+      setText('total-ttc', formatEur(data.total_ttc ?? 0));
+      if (data.mention_tva) {
+        const el = document.getElementById('mention-tva-text');
+        el.textContent = data.mention_tva;
+        el.style.display = '';
+      }
+
+      // ── Conditions ───────────────────────────────────────────────────────
+      if (data.conditions || data.delai) {
+        document.getElementById('conditions-card').style.display = '';
+        if (data.conditions) {
+          setText('cond-paiement-value', data.conditions);
+          document.getElementById('cond-paiement-box').style.display = '';
+        }
+        if (data.delai) {
+          setText('cond-delai-value', data.delai);
+          document.getElementById('cond-delai-box').style.display = '';
+        }
+      }
+
+      showState('choice');
+
+      // Si action=refuser pré-sélectionné
+      if (actionParam === 'refuser') {
+        toggleRefus();
+        document.getElementById('refus-section').scrollIntoView({ behavior: 'smooth' });
+      }
+    }
+
+    // ── Signer (accepter) ────────────────────────────────────────────────────
+    async function signerDevis() {
+      const nomSignataire = document.getElementById('nom-signataire').value.trim();
+      const rgpdCheck = document.getElementById('rgpd-check').checked;
+
+      if (!nomSignataire) {
+        document.getElementById('nom-signataire').classList.add('error');
+        document.getElementById('nom-signataire').focus();
+        document.getElementById('nom-signataire').placeholder = '⚠️ Nom obligatoire pour signer';
+        return;
+      }
+      document.getElementById('nom-signataire').classList.remove('error');
+
+      if (!rgpdCheck) {
+        alert('Veuillez cocher la case de consentement RGPD pour pouvoir signer.');
+        return;
+      }
+
+      document.getElementById('btn-signer').disabled = true;
+      document.getElementById('btn-signer').textContent = '⏳ Enregistrement…';
+
+      try {
+        // Capturer l'IP client
+        let ipClient = 'inconnue';
+        try {
+          const ipRes = await fetch('https://api.ipify.org?format=json');
+          const ipData = await ipRes.json();
+          ipClient = ipData.ip ?? 'inconnue';
+        } catch { /* non bloquant */ }
+
+        const userAgent   = navigator.userAgent;
+        const dateAccept  = new Date();
+
+        // Mettre à jour Supabase
+        const { error: updateError } = await db
+          .from('devis')
+          .update({
+            statut:            'accepte',
+            signature_client:  nomSignataire,
+            date_acceptation:  dateAccept.toISOString(),
+            ip_client:         ipClient,
+            user_agent_client: userAgent,
+          })
+          .eq('id', devisId);
+
+        if (updateError) throw updateError;
+
+        // Notif push artisan
+        if (devisData?.artisan_id) {
+          try {
+            const { data: artisanPush } = await db
+              .from('artisan')
+              .select('push_token')
+              .eq('id', devisData.artisan_id)
+              .single();
+            if (artisanPush?.push_token) {
+              await fetch('https://exp.host/--/api/v2/push/send', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+                body: JSON.stringify({
+                  to:    artisanPush.push_token,
+                  title: 'Devis accepté 🎉',
+                  body:  `${devisData.client_nom} a signé et accepté votre devis !`,
+                  sound: 'default',
+                  data:  { devisId, statut: 'accepte' },
+                }),
+              });
+            }
+          } catch { /* non bloquant */ }
+        }
+
+        // Appeler l'Edge Function de confirmation (non bloquant)
+        try {
+          await fetch(`${SUPABASE_URL}/functions/v1/send-confirmation`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+            },
+            body: JSON.stringify({ devisId, action: 'accepte' }),
+          });
+        } catch { /* non bloquant */ }
+
+        // Afficher confirmation
+        setText('confirm-icon', '✅');
+        setText('confirm-title', 'Devis signé et accepté !');
+        setText('confirm-text', `Votre signature électronique a été enregistrée. ${artisanData ? (artisanData.prenom || '') + (artisanData.nom ? ' ' + artisanData.nom : '') : 'Votre artisan'} va vous contacter pour la suite des travaux.`);
+
+        const legalEl = document.getElementById('confirm-legal');
+        setText('proof-nom', nomSignataire);
+        setText('proof-date', formatDateHeure(dateAccept));
+        setText('proof-ip', ipClient);
+        legalEl.style.display = '';
+
+        const badge = document.getElementById('confirm-badge');
+        badge.textContent = '✅ Devis signé — ' + formatDateHeure(dateAccept);
+        badge.className = 'confirm-badge badge-accepte';
+
         showState('confirm');
-      }catch(err){showState('error');['btn-accepter','btn-refuser'].forEach(id=>{const b=document.getElementById(id);if(b)b.disabled=false;});}
+
+      } catch (err) {
+        console.error('[Signature]', err);
+        document.getElementById('btn-signer').disabled = false;
+        document.getElementById('btn-signer').textContent = '✅ \u00a0Signer et accepter le devis';
+        alert('Une erreur est survenue lors de l\'enregistrement. Réessayez ou contactez l\'artisan.');
+      }
     }
+
+    // ── Refuser ──────────────────────────────────────────────────────────────
+    async function refuserDevis() {
+      const motif = document.getElementById('motif-refus').value.trim();
+      const btnR  = document.querySelector('.btn-refuser-confirm');
+      btnR.disabled = true;
+      btnR.textContent = '⏳ Enregistrement…';
+
+      try {
+        const updatePayload = { statut: 'refuse' };
+        if (motif) updatePayload.paiement = motif; // réutilise champ libre pour le motif
+
+        const { error } = await db
+          .from('devis')
+          .update(updatePayload)
+          .eq('id', devisId);
+
+        if (error) throw error;
+
+        // Notif push
+        if (devisData?.artisan_id) {
+          try {
+            const { data: artisanPush } = await db
+              .from('artisan').select('push_token').eq('id', devisData.artisan_id).single();
+            if (artisanPush?.push_token) {
+              await fetch('https://exp.host/--/api/v2/push/send', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+                body: JSON.stringify({
+                  to: artisanPush.push_token,
+                  title: 'Devis refusé 😔',
+                  body:  `${devisData.client_nom} a refusé votre devis.${motif ? ' Motif : ' + motif : ''}`,
+                  sound: 'default',
+                  data:  { devisId, statut: 'refuse' },
+                }),
+              });
+            }
+          } catch { /* non bloquant */ }
+        }
+
+        // Appeler Edge Function (non bloquant)
+        try {
+          await fetch(`${SUPABASE_URL}/functions/v1/send-confirmation`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+            },
+            body: JSON.stringify({ devisId, action: 'refuse', motif }),
+          });
+        } catch { /* non bloquant */ }
+
+        setText('confirm-icon', '❌');
+        setText('confirm-title', 'Refus enregistré');
+        setText('confirm-text', 'Votre refus a été enregistré. Vous pouvez contacter l\'artisan pour discuter des conditions.');
+        document.getElementById('confirm-legal').style.display = 'none';
+
+        const badge = document.getElementById('confirm-badge');
+        badge.textContent = '❌ Devis refusé';
+        badge.className = 'confirm-badge badge-refuse';
+
+        showState('confirm');
+
+      } catch (err) {
+        console.error('[Refus]', err);
+        btnR.disabled = false;
+        btnR.textContent = 'Confirmer le refus';
+        alert('Erreur lors de l\'enregistrement. Réessayez.');
+      }
+    }
+
+    // Lancement
     init();
   </script>
 </body>
